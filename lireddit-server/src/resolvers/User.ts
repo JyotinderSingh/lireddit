@@ -48,28 +48,59 @@ export class UserResolver {
     @Arg("options") options: UsernamePasswordInput,
     @Ctx() { em }: MyContext
   ): Promise<UserResponse> {
-    const hashedPassword = await argon2.hash(options.password);
-
-    try {
-      const user = em.create(User, {
-        username: options.username,
-        password: hashedPassword,
-      });
-      await em.persistAndFlush(user);
-      return {
-        user: user,
-      };
-    } catch (err) {
-      console.log(err.detail);
+    if (options.username.length <= 2) {
       return {
         errors: [
           {
-            field: "Username",
-            message: "Username already exists",
+            field: "username",
+            message: "length must be greater than 2 characters",
           },
         ],
       };
     }
+
+    if (options.password.length <= 2) {
+      return {
+        errors: [
+          {
+            field: "password",
+            message: "length must be greater than 2 characters",
+          },
+        ],
+      };
+    }
+    const hashedPassword = await argon2.hash(options.password);
+
+    const user = em.create(User, {
+      username: options.username,
+      password: hashedPassword,
+    });
+    try {
+      await em.persistAndFlush(user);
+    } catch (err) {
+      if (err.code === "23505") {
+        // duplicate user error
+        return {
+          errors: [
+            {
+              field: "Username",
+              message: "Username already taken",
+            },
+          ],
+        };
+      }
+      return {
+        errors: [
+          {
+            field: "unknown",
+            message: "oops, something unexpected happened. ERR CODE: 1234567",
+          },
+        ],
+      };
+    }
+    return {
+      user,
+    };
   }
 
   @Mutation(() => UserResponse)
