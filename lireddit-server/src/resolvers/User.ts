@@ -95,7 +95,7 @@ export class UserResolver {
         return {
           errors: [
             {
-              field: "Username",
+              field: "username",
               message: "Username already taken",
             },
           ],

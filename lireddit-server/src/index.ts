@@ -3,6 +3,7 @@ import { MikroORM } from "@mikro-orm/core";
 import express from "express";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
+import cors from "cors";
 
 import { __prod__ } from "./constants";
 import microConfig from "./mikro-orm.config";
@@ -29,6 +30,14 @@ const main = async () => {
 
   const app = express();
 
+  // we apply this cors policy to all routes, hence we dont pass any specific route here
+  app.use(
+    cors({
+      origin: "http://localhost:3000",
+      credentials: true,
+    })
+  );
+
   app.use(
     session({
       name: "qid",
@@ -53,10 +62,14 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
     }),
+    // remove the interface in case it gives trouble lol
     context: ({ req, res }): MyContext => ({ em: orm.em, req, res }),
   });
 
-  apolloServer.applyMiddleware({ app });
+  apolloServer.applyMiddleware({
+    app,
+    cors: false,
+  });
 
   app.listen(4000, () => {
     console.log("Server started on localhost:4000");
