@@ -10,7 +10,7 @@ import microConfig from "./mikro-orm.config";
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/Post";
 import { UserResolver } from "./resolvers/User";
-import redis from "redis";
+import Redis from "ioredis";
 import session from "express-session";
 import connectRedis from "connect-redis";
 import dotenv from "dotenv";
@@ -26,7 +26,7 @@ const main = async () => {
   // This runs the migrations before doing anything else, so that we don't need to do that manually on the terminal
   orm.getMigrator().up();
   const RedisStore = connectRedis(session);
-  const redisClient = redis.createClient();
+  const redis = new Redis();
 
   const app = express();
 
@@ -42,7 +42,7 @@ const main = async () => {
     session({
       name: COOKIE_NAME,
       store: new RedisStore({
-        client: redisClient,
+        client: redis,
         disableTouch: true,
       }),
       cookie: {
@@ -63,7 +63,7 @@ const main = async () => {
       validate: false,
     }),
     // remove the interface in case it gives trouble lol
-    context: ({ req, res }): MyContext => ({ em: orm.em, req, res }),
+    context: ({ req, res }): MyContext => ({ em: orm.em, req, res, redis }),
   });
 
   apolloServer.applyMiddleware({
