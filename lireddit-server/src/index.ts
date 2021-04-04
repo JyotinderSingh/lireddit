@@ -1,12 +1,10 @@
 import "reflect-metadata";
-import { MikroORM } from "@mikro-orm/core";
 import express from "express";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
 import cors from "cors";
 
 import { COOKIE_NAME, __prod__ } from "./constants";
-import microConfig from "./mikro-orm.config";
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/Post";
 import { UserResolver } from "./resolvers/User";
@@ -15,20 +13,29 @@ import session from "express-session";
 import connectRedis from "connect-redis";
 import dotenv from "dotenv";
 import { MyContext } from "./types";
+import { createConnection } from "typeorm";
+import { Post } from "./entities/Post";
+import { User } from "./entities/User";
 
 const main = async () => {
   dotenv.config();
 
   const SESSION_SECRET = process.env.SESSION_SECRET;
 
-  const orm = await MikroORM.init(microConfig);
-
-  // This runs the migrations before doing anything else, so that we don't need to do that manually on the terminal
-  orm.getMigrator().up();
-  const RedisStore = connectRedis(session);
-  const redis = new Redis();
+  const conn = createConnection({
+    type: "postgres",
+    database: process.env.DATABASE_NAME,
+    username: process.env.DATABASE_USERNAME,
+    password: process.env.DATABASE_PASSWORD,
+    logging: !__prod__,
+    synchronize: true,
+    entities: [Post, User],
+  });
 
   const app = express();
+
+  const RedisStore = connectRedis(session);
+  const redis = new Redis();
 
   // we apply this cors policy to all routes, hence we dont pass any specific route here
   app.use(
@@ -63,7 +70,7 @@ const main = async () => {
       validate: false,
     }),
     // remove the interface in case it gives trouble lol
-    context: ({ req, res }): MyContext => ({ em: orm.em, req, res, redis }),
+    context: ({ req, res }): MyContext => ({ req, res, redis }),
   });
 
   apolloServer.applyMiddleware({
