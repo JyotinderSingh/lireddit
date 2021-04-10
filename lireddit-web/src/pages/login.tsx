@@ -1,22 +1,30 @@
-import React from "react";
-import { Formik, Form, validateYupSchema } from "formik";
 import { Box, Button, Flex, Link } from "@chakra-ui/react";
-import { Wrapper } from "../components/Wrapper";
-import { InputField } from "../components/InputField";
-import { useLoginMutation } from "../generated/graphql";
-import { toErrorMap } from "../utils/toErrorMap";
-import { useRouter } from "next/router";
+import { Form, Formik } from "formik";
 import { withUrqlClient } from "next-urql";
-import { createUrqlClient } from "../utils/createUrqlClient";
 import NextLink from "next/link";
+import { useRouter } from "next/router";
+import React, { useEffect } from "react";
+import { InputField } from "../components/InputField";
+import { Layout } from "../components/Layout";
+import { useLoginMutation, useMeQuery } from "../generated/graphql";
+import { createUrqlClient } from "../utils/createUrqlClient";
+import { toErrorMap } from "../utils/toErrorMap";
 
 interface RegisterProps {}
 
 const Login: React.FC<RegisterProps> = () => {
   const router = useRouter();
+  const [{ data, fetching }] = useMeQuery();
   const [, login] = useLoginMutation();
+
+  useEffect(() => {
+    if (!fetching && data?.me) {
+      router.replace("/");
+    }
+  }, [data, fetching, router]);
+
   return (
-    <Wrapper variant="small">
+    <Layout variant="small">
       <Formik
         initialValues={{ usernameOrEmail: "", password: "" }}
         onSubmit={async (values, { setErrors }) => {
@@ -25,12 +33,16 @@ const Login: React.FC<RegisterProps> = () => {
           if (response.data?.login.errors) {
             setErrors(toErrorMap(response.data.login.errors));
           } else if (response.data?.login.user) {
-            // worked
-            router.push("/");
+            if (typeof router.query.next === "string") {
+              // If we have a next query param, we redirect them to the required page
+              router.push(router.query.next);
+            } else {
+              router.push("/");
+            }
           }
         }}
       >
-        {({ values, handleChange, isSubmitting }) => (
+        {({ isSubmitting }) => (
           <Form>
             <InputField
               name="usernameOrEmail"
@@ -64,7 +76,7 @@ const Login: React.FC<RegisterProps> = () => {
           </Form>
         )}
       </Formik>
-    </Wrapper>
+    </Layout>
   );
 };
 

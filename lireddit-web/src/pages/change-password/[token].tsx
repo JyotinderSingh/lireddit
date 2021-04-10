@@ -10,72 +10,70 @@ import { Wrapper } from "../../components/Wrapper";
 import { useChangePasswordMutation } from "../../generated/graphql";
 import { createUrqlClient } from "../../utils/createUrqlClient";
 import { toErrorMap } from "../../utils/toErrorMap";
+import { Layout } from "../../components/Layout";
 
-interface ChangePasswordProps {}
-
-const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
+const ChangePassword: NextPage = () => {
   const router = useRouter();
   const [, changePassword] = useChangePasswordMutation();
   const [tokenError, settokenError] = useState("");
   return (
-    <Wrapper variant="small">
-      <Formik
-        initialValues={{ newPassword: "" }}
-        onSubmit={async (values, { setErrors }) => {
-          const response = await changePassword({
-            newPassword: values.newPassword,
-            token,
-          });
-          if (response.data?.changePassword.errors) {
-            const errorMap = toErrorMap(response.data.changePassword.errors);
-            if ("token" in errorMap) {
-              settokenError(errorMap.token);
+    <Layout>
+      <Wrapper variant="small">
+        <Formik
+          initialValues={{ newPassword: "" }}
+          onSubmit={async (values, { setErrors }) => {
+            const response = await changePassword({
+              newPassword: values.newPassword,
+              token:
+                typeof router.query.token === "string"
+                  ? router.query.token
+                  : "",
+            });
+            if (response.data?.changePassword.errors) {
+              const errorMap = toErrorMap(response.data.changePassword.errors);
+              if ("token" in errorMap) {
+                settokenError(errorMap.token);
+              }
+              setErrors(errorMap);
+            } else if (response.data?.changePassword.user) {
+              // worked
+              router.push("/");
             }
-            setErrors(errorMap);
-          } else if (response.data?.changePassword.user) {
-            // worked
-            router.push("/");
-          }
-        }}
-      >
-        {({ values, handleChange, isSubmitting }) => (
-          <Form>
-            <InputField
-              name="newPassword"
-              placeholder="New Password"
-              label="New Password"
-              type="password"
-            />
-            {tokenError ? (
-              <Flex>
-                <Box mr={1} color="tomato">
-                  {tokenError}
-                </Box>
-                <NextLink href="/forgot-password">
-                  <Link color="red">- click here to get a new one</Link>
-                </NextLink>
-              </Flex>
-            ) : null}
-            <Button
-              mt={4}
-              isLoading={isSubmitting}
-              type="submit"
-              colorScheme="teal"
-              color="white"
-            >
-              Change Password
-            </Button>
-          </Form>
-        )}
-      </Formik>
-    </Wrapper>
+          }}
+        >
+          {({ values, handleChange, isSubmitting }) => (
+            <Form>
+              <InputField
+                name="newPassword"
+                placeholder="New Password"
+                label="New Password"
+                type="password"
+              />
+              {tokenError ? (
+                <Flex>
+                  <Box mr={1} color="tomato">
+                    {tokenError}
+                  </Box>
+                  <NextLink href="/forgot-password">
+                    <Link color="red">- click here to get a new one</Link>
+                  </NextLink>
+                </Flex>
+              ) : null}
+              <Button
+                mt={4}
+                isLoading={isSubmitting}
+                type="submit"
+                colorScheme="teal"
+                color="white"
+              >
+                Change Password
+              </Button>
+            </Form>
+          )}
+        </Formik>
+      </Wrapper>
+    </Layout>
   );
-};
-
-ChangePassword.getInitialProps = ({ query }) => {
-  return {
-    token: query.token as string,
-  };
 };
 
 export default withUrqlClient(createUrqlClient)(ChangePassword as any);
