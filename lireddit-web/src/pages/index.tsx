@@ -2,15 +2,36 @@ import { withUrqlClient } from "next-urql";
 import { Layout } from "../components/Layout";
 import { usePostsQuery } from "../generated/graphql";
 import { createUrqlClient } from "../utils/createUrqlClient";
-import { Link, Stack, Box, Heading, Text, Flex } from "@chakra-ui/react";
+import {
+  Link,
+  Stack,
+  Box,
+  Heading,
+  Text,
+  Flex,
+  Button,
+} from "@chakra-ui/react";
 import NextLink from "next/link";
+import { useState } from "react";
 
 const Index = () => {
-  const [{ data }] = usePostsQuery({
-    variables: {
-      limit: 5,
-    },
+  const [variables, setVariables] = useState({
+    limit: 33,
+    cursor: null as null | string,
   });
+  const [{ data, fetching }] = usePostsQuery({
+    variables,
+  });
+
+  if (!fetching && !data) {
+    return (
+      <div>
+        Something went wrong, or the GraphQL query broke. We're not sure, but
+        we're looking into it.
+      </div>
+    );
+  }
+
   return (
     <Layout variant="regular">
       <Flex align="center">
@@ -36,11 +57,11 @@ const Index = () => {
         </NextLink>
       </Flex>
       <br />
-      {!data ? (
-        <div>loading..</div>
+      {!data && fetching ? (
+        <div>loading...</div>
       ) : (
         <Stack spacing={8}>
-          {data.posts.map((p) => (
+          {data!.posts.posts.map((p) => (
             <Box
               key={p.id}
               p={5}
@@ -53,6 +74,28 @@ const Index = () => {
             </Box>
           ))}
         </Stack>
+      )}
+      {data && data.posts.hasMore ? (
+        <Flex>
+          <Button
+            onClick={() =>
+              setVariables({
+                limit: variables.limit,
+                cursor: data.posts.posts[data.posts.posts.length - 1].createdAt,
+              })
+            }
+            isLoading={fetching}
+            m="auto"
+            my={8}
+            colorScheme="blackAlpha"
+          >
+            Load more
+          </Button>
+        </Flex>
+      ) : (
+        <Flex align="center">
+          <Box m="auto" my={8}>You're all caught up 🎉</Box>
+        </Flex>
       )}
     </Layout>
   );

@@ -17,7 +17,6 @@ import { PostResolver } from "./resolvers/Post";
 import { UserResolver } from "./resolvers/User";
 import { MyContext } from "./types";
 
-// rerun
 const main = async () => {
   dotenv.config();
 
@@ -35,6 +34,9 @@ const main = async () => {
   });
 
   await conn.runMigrations();
+
+  // await Post.delete({});
+
   const app = express();
 
   const RedisStore = connectRedis(session);
