@@ -16,7 +16,7 @@ import { useState } from "react";
 
 const Index = () => {
   const [variables, setVariables] = useState({
-    limit: 33,
+    limit: 15,
     cursor: null as null | string,
   });
   const [{ data, fetching }] = usePostsQuery({
@@ -70,6 +70,9 @@ const Index = () => {
               borderRadius="xl"
             >
               <Heading fontSize="xl">{p.title}</Heading>
+              <Text size="sm" color="teal.600">
+                posted by {p.creator.username}
+              </Text>
               <Text mt={4}>{p.textSnippet}</Text>
             </Box>
           ))}
@@ -94,7 +97,9 @@ const Index = () => {
         </Flex>
       ) : (
         <Flex align="center">
-          <Box m="auto" my={8}>You're all caught up 🎉</Box>
+          <Box m="auto" my={8}>
+            You're all caught up 🎉
+          </Box>
         </Flex>
       )}
     </Layout>
