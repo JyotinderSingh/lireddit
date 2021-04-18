@@ -162,7 +162,7 @@ export class PostResolver {
     ${
       req.session.userId
         ? ',(select value from updoot where "userId" = $2 and "postId" = p.id) "voteStatus"'
-        : 'null as "voteStatus"'
+        : ',null as "voteStatus"'
     }
     from post p
     inner join public.user u on u.id = p."creatorId"
