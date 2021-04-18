@@ -8,15 +8,7 @@ interface NavBarProps {}
 
 export const NavBar: React.FC<NavBarProps> = () => {
   const [{ fetching: logoutFetching }, logout] = useLogoutMutation();
-  const [{ data, fetching }] = useMeQuery({
-    // This tells the Next js server to not run this query while SSR'ing a page, since it will
-    // anyway not have the user cookie required to run this query - and in the end will just be an
-    // extra request. (We could set it up to get the query, but it will just be an extra request that's not needed)
-    // *
-    // the pause value is true when it's running on a server, otherwise it's false (on user's system) hence the query
-    // is run when it's on the user's machine
-    pause: isServer(),
-  });
+  const [{ data, fetching }] = useMeQuery();
 
   let body = null;
 
