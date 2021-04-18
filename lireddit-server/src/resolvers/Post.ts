@@ -3,7 +3,6 @@ import {
   Ctx,
   Field,
   FieldResolver,
-  Info,
   InputType,
   Int,
   Mutation,
@@ -60,18 +59,67 @@ export class PostResolver {
     //   value: realValue,
     // });
 
-    // you could also perform the below command with TypeORM's in built functions, this is just one way
-    await getConnection().query(
-      `
-    START TRANSACTION;
-    insert into updoot ("userId", "postId", value)
-    values (${userId}, ${postId}, ${realValue});
-    update post
-    set points = points + ${realValue}
-    where id = ${postId};
-    COMMIT;
-    `
-    );
+    const updoot = await Updoot.findOne({ where: { postId, userId } });
+    // the user has voted on the post before and they are changing their vote
+    if (updoot && updoot.value !== realValue) {
+      await getConnection().transaction(async (tm) => {
+        await tm.query(
+          `
+          update updoot 
+          set value = $1
+          where "postId" = $2 and "userId" = $3
+        `,
+          [realValue, postId, userId]
+        );
+        await tm.query(
+          `
+          update post
+          set points = points + $1
+          where id = $2
+        `,
+          [2 * realValue, postId]
+        );
+      });
+    } else if (updoot && updoot.value === realValue) {
+      // The user is undoing their vote
+      await getConnection().transaction(async (tm) => {
+        await tm.query(
+          `
+          delete from updoot 
+          where "postId" = $1 and "userId" = $2
+        `,
+          [postId, userId]
+        );
+        await tm.query(
+          `
+        update post
+        set points = points + $1
+        where id = $2 
+        `,
+          [-1 * realValue, postId]
+        );
+      });
+    } else if (!updoot) {
+      // has never voted before
+      await getConnection().transaction(async (tm) => {
+        await tm.query(
+          `
+          insert into updoot ("userId", "postId", value)
+          values ($1, $2, $3)
+        `,
+          [userId, postId, realValue]
+        );
+
+        await tm.query(
+          `
+          update post
+          set points = points + $1
+          where id = $2
+        `,
+          [realValue, postId]
+        );
+      });
+    }
 
     return true;
   }
@@ -79,7 +127,8 @@ export class PostResolver {
   @Query(() => PaginatedPosts)
   async posts(
     @Arg("limit", () => Int) limit: number,
-    @Arg("cursor", () => String, { nullable: true }) cursor: string | null
+    @Arg("cursor", () => String, { nullable: true }) cursor: string | null,
+    @Ctx() { req }: MyContext
   ): Promise<PaginatedPosts> {
     // we cap the request limit at 50
     // we do an n + 1, to see if we get n + 1 posts, or less than that.
@@ -87,7 +136,7 @@ export class PostResolver {
     const realLimit = Math.min(50, limit);
     const realLimitPlusOne = realLimit + 1;
 
-    const replacements: any[] = [realLimitPlusOne];
+    const replacements: any[] = [realLimitPlusOne, req.session.userId];
 
     if (cursor) {
       replacements.push(new Date(parseInt(cursor)));
@@ -103,9 +152,14 @@ export class PostResolver {
       'createdAt', u."createdAt",
       'updatedAt', u."updatedAt"
     ) creator
+    ${
+      req.session.userId
+        ? ',(select value from updoot where "userId" = $2 and "postId" = p.id) "voteStatus"'
+        : 'null as "voteStatus'
+    }
     from post p
     inner join public.user u on u.id = p."creatorId"
-    ${cursor ? `where p."createdAt" < $2` : ""}
+    ${cursor ? `where p."createdAt" < $3` : ""}
     order by p."createdAt" DESC
     limit $1
     `,

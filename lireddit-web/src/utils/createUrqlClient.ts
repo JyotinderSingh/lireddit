@@ -1,4 +1,5 @@
 import { cacheExchange, Resolver } from "@urql/exchange-graphcache";
+import gql from "graphql-tag";
 import Router from "next/router";
 import {
   dedupExchange,
@@ -13,6 +14,7 @@ import {
   MeDocument,
   MeQuery,
   RegisterMutation,
+  VoteMutationVariables,
 } from "../generated/graphql";
 import { betterUpdateQuery } from "./betterUpdateQuery";
 
@@ -142,6 +144,53 @@ export const createUrqlClient = (ssrExchange: any) => ({
       },
       updates: {
         Mutation: {
+          vote: (_result, args, cache, info) => {
+            const { postId, value } = args as VoteMutationVariables;
+            const data = cache.readFragment(
+              gql`
+                fragment _ on Post {
+                  id
+                  points
+                  voteStatus
+                }
+              `,
+              { id: postId } as any
+            ); // Data or null
+            console.log("Data: ", data);
+
+            if (data) {
+              let newPoints = data.points;
+              let newValue = null;
+              if (data.voteStatus) {
+                if (data.voteStatus === 1 && value === 1) {
+                  newValue = null;
+                  newPoints -= 1;
+                } else if (data.voteStatus === 1 && value === -1) {
+                  newValue = -1;
+                  newPoints -= 2;
+                } else if (data.voteStatus === -1 && value === -1) {
+                  newValue = null;
+                  newPoints += 1;
+                } else if (data.voteStatus === -1 && value === 1) {
+                  newValue = 1;
+                  newPoints += 2;
+                }
+              } else {
+                newPoints += value;
+                newValue = value;
+              }
+
+              cache.writeFragment(
+                gql`
+                  fragment __ on Post {
+                    points
+                    voteStatus
+                  }
+                `,
+                { id: postId, points: newPoints, voteStatus: newValue }
+              );
+            }
+          },
           createPost: (_result, args, cache, info) => {
             const allFields = cache.inspectFields("Query");
             const fieldInfos = allFields.filter(

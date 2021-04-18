@@ -3,9 +3,9 @@ import {
   FormErrorMessage,
   FormLabel,
   Input,
-  Textarea,
+  Textarea
 } from "@chakra-ui/react";
-import { FieldHookConfig, useField } from "formik";
+import { useField } from "formik";
 import React from "react";
 
 type InputFieldProps = any & {
@@ -27,7 +27,14 @@ export const InputField: React.FC<InputFieldProps> = ({
     <FormControl isInvalid={!!error}>
       <FormLabel htmlFor={field.name}>{label}</FormLabel>
 
-      <InputOrText {...field} {...props} id={field.name} />
+      <InputOrText
+        {...field}
+        {...props}
+        id={field.name}
+        _hover={{
+          borderColor: "teal.300",
+        }}
+      />
       {error ? <FormErrorMessage>{error}</FormErrorMessage> : null}
     </FormControl>
   );
