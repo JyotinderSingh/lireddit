@@ -10,10 +10,11 @@ import {
 import { withUrqlClient } from "next-urql";
 import NextLink from "next/link";
 import { useState } from "react";
+import { EditDeletePostButtons } from "../components/EditDeletePostButtons";
 import { Layout } from "../components/Layout";
-import { usePostsQuery } from "../generated/graphql";
-import { createUrqlClient } from "../utils/createUrqlClient";
 import { UpdootSection } from "../components/UpdootSection";
+import { useMeQuery, usePostsQuery } from "../generated/graphql";
+import { createUrqlClient } from "../utils/createUrqlClient";
 
 const Index = () => {
   const [variables, setVariables] = useState({
@@ -62,29 +63,35 @@ const Index = () => {
         <div>loading...</div>
       ) : (
         <Stack spacing={8}>
-          {data!.posts.posts.map((p) => (
-            <Flex
-              key={p.id}
-              p={5}
-              shadow="lg"
-              borderWidth="1px"
-              borderRadius="xl"
-              alignItems="center"
-            >
-              <UpdootSection post={p} />
-              <Box>
-                <NextLink href="/post/[id]" as={`/post/${p.id}`}>
-                  <Link style={{ textDecoration: "none" }}>
-                    <Heading fontSize="xl">{p.title}</Heading>
-                  </Link>
-                </NextLink>
-                <Text size="sm" color="teal.600">
-                  posted by {p.creator.username}
-                </Text>
-                <Text mt={4}>{p.textSnippet}</Text>
-              </Box>
-            </Flex>
-          ))}
+          {data!.posts.posts.map((p) =>
+            !p ? null : (
+              <Flex
+                key={p.id}
+                p={5}
+                shadow="lg"
+                borderWidth="1px"
+                borderRadius="xl"
+                alignItems="center"
+              >
+                <UpdootSection post={p} />
+                <Box flex={1}>
+                  <NextLink href="/post/[id]" as={`/post/${p.id}`}>
+                    <Link style={{ textDecoration: "none" }}>
+                      <Heading fontSize="xl">{p.title}</Heading>
+                    </Link>
+                  </NextLink>
+                  <Text size="sm" color="teal.600">
+                    posted by {p.creator.username}
+                  </Text>
+                  <Text flex={1} mt={4}>
+                    {p.textSnippet}
+                  </Text>
+
+                  <EditDeletePostButtons id={p.id} creatorId={p.creator.id} />
+                </Box>
+              </Flex>
+            )
+          )}
         </Stack>
       )}
       {data && data.posts.hasMore ? (
