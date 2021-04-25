@@ -39,7 +39,7 @@ const Index = () => {
         <Text fontSize="4xl" fontWeight="semibold" color="gray.600">
           <span style={{ color: "teal" }}>li</span>Reddit
         </Text>
-        <NextLink href="/create-post">
+        {/* <NextLink href="/create-post">
           <Link
             ml="auto"
             borderWidth="1px"
@@ -55,7 +55,7 @@ const Index = () => {
           >
             Create Post
           </Link>
-        </NextLink>
+        </NextLink> */}
       </Flex>
       <br />
       {!data && fetching ? (
@@ -73,7 +73,11 @@ const Index = () => {
             >
               <UpdootSection post={p} />
               <Box>
-                <Heading fontSize="xl">{p.title}</Heading>
+                <NextLink href="/post/[id]" as={`/post/${p.id}`}>
+                  <Link style={{ textDecoration: "none" }}>
+                    <Heading fontSize="xl">{p.title}</Heading>
+                  </Link>
+                </NextLink>
                 <Text size="sm" color="teal.600">
                   posted by {p.creator.username}
                 </Text>
