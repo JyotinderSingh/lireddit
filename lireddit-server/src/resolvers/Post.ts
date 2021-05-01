@@ -149,7 +149,6 @@ export class PostResolver {
   async posts(
     @Arg("limit", () => Int) limit: number,
     @Arg("cursor", () => String, { nullable: true }) cursor: string | null,
-    @Ctx() { req }: MyContext
   ): Promise<PaginatedPosts> {
     // we cap the request limit at 50
     // we do an n + 1, to see if we get n + 1 posts, or less than that.
