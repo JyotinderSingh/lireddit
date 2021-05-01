@@ -1,6 +1,5 @@
 import DataLoader from "dataloader";
 import { Updoot } from "../entities/Updoot";
-import { User } from "../entities/User";
 
 const updootKeyBuilder = (updoot: Partial<Updoot>): string => {
   return `${updoot.userId}|${updoot.postId}`;
