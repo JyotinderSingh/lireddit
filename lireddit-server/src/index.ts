@@ -17,6 +17,8 @@ import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/Post";
 import { UserResolver } from "./resolvers/User";
 import { MyContext } from "./types";
+import { createUpdootLoader } from "./utils/createUpdootLoader";
+import { createUserLoader } from "./utils/createUserLoader";
 
 const main = async () => {
   dotenv.config();
@@ -76,7 +78,13 @@ const main = async () => {
       validate: false,
     }),
     // remove the interface in case it gives trouble lol
-    context: ({ req, res }): MyContext => ({ req, res, redis }),
+    context: ({ req, res }): MyContext => ({
+      req,
+      res,
+      redis,
+      userLoader: createUserLoader(),
+      updootLoader: createUpdootLoader()
+    }),
   });
 
   apolloServer.applyMiddleware({
