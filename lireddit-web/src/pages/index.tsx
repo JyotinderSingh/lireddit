@@ -21,15 +21,18 @@ const Index = () => {
     limit: 15,
     cursor: null as null | string,
   });
-  const [{ data, fetching }] = usePostsQuery({
+  const [{ data, error, fetching }] = usePostsQuery({
     variables,
   });
 
   if (!fetching && !data) {
     return (
       <div>
-        Something went wrong, or the GraphQL query broke. We're not sure, but
-        we're looking into it.
+        <div>
+          Something went wrong, or the GraphQL query broke. We're not sure, but
+          we're looking into it.
+        </div>
+        <div>{error?.message}</div>
       </div>
     );
   }
