@@ -27,7 +27,7 @@ const main = async () => {
     type: "postgres",
     url: process.env.DATABASE_URL,
     logging: !__prod__,
-    // synchronize: true,
+    synchronize: true,
     migrations: [path.join(__dirname, "./migrations/*")],
     entities: [Post, User, Updoot],
   });
@@ -41,7 +41,7 @@ const main = async () => {
   const RedisStore = connectRedis(session);
   const redis = new Redis(process.env.REDIS_URL);
   // we're telling express that we have a proxy sitting in front of the application, so that sessions and cookies work as expected
-  app.set("proxy", 1);
+  app.set("trust proxy", 1);
 
   // we apply this cors policy to all routes, hence we dont pass any specific route here
   app.use(
